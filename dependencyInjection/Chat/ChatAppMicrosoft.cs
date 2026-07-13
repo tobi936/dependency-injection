@@ -25,8 +25,6 @@ namespace dependencyInjection.Chat
 
 		public void Run()
 		{
-			UserSeeder.Seed(users);
-
 			while (true)
 			{
 				screen.Render();
