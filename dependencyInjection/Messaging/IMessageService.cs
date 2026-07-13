@@ -1,4 +1,6 @@
-namespace dependencyInjection.Services
+using dependencyInjection.Model;
+
+namespace dependencyInjection.Messaging
 {
 	internal interface IMessageService
 	{

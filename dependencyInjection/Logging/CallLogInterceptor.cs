@@ -1,6 +1,6 @@
 using Castle.DynamicProxy;
 
-namespace dependencyInjection.Services
+namespace dependencyInjection.Logging
 {
 	internal class CallLogInterceptor : IInterceptor
 	{

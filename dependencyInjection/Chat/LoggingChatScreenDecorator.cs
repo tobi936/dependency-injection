@@ -1,4 +1,7 @@
-namespace dependencyInjection.Services
+using dependencyInjection.Logging;
+using dependencyInjection.Model;
+
+namespace dependencyInjection.Chat
 {
 	internal class LoggingChatScreenDecorator : IChatScreen
 	{

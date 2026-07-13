@@ -1,4 +1,7 @@
-namespace dependencyInjection.Services
+using dependencyInjection.Chat;
+using dependencyInjection.Model;
+
+namespace dependencyInjection.Messaging
 {
 	[Messenger("Telegram", "Cloud-Sync")]
 	internal class TelegramMessageService : IMessageService

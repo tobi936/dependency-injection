@@ -1,8 +1,10 @@
 using System.Reflection;
 using Autofac;
 using Autofac.Extras.DynamicProxy;
+using dependencyInjection.Logging;
+using dependencyInjection.Messaging;
 
-namespace dependencyInjection.Services
+namespace dependencyInjection.Hosting
 {
 	// Feature: Module - buendelt zusammengehoerige Registrierungen (wie ein Plugin-Paket).
 	// MS DI kennt nur Extension-Methoden (services.AddMessaging()), aber kein echtes Modul-Konzept.

@@ -1,6 +1,6 @@
 using System.Text;
 using Spectre.Console;
-using dependencyInjection;
+using dependencyInjection.Hosting;
 
 Console.OutputEncoding = Encoding.UTF8;
 

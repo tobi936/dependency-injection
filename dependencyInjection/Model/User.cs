@@ -1,4 +1,4 @@
-namespace dependencyInjection
+namespace dependencyInjection.Model
 {
 	public class User
 	{

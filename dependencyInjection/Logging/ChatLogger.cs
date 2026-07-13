@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace dependencyInjection.Services
+namespace dependencyInjection.Logging
 {
 	internal interface IChatLogger
 	{

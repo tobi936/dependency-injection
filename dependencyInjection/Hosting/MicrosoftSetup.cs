@@ -1,7 +1,10 @@
-using dependencyInjection.Services;
 using Microsoft.Extensions.DependencyInjection;
+using dependencyInjection.Chat;
+using dependencyInjection.Logging;
+using dependencyInjection.Messaging;
+using dependencyInjection.Model;
 
-namespace dependencyInjection
+namespace dependencyInjection.Hosting
 {
 	public static class MicrosoftSetup
 	{

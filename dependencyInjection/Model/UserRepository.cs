@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace dependencyInjection
+namespace dependencyInjection.Model
 {
 	internal class UserRepository
 	{

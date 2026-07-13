@@ -1,7 +1,9 @@
 using Autofac;
-using dependencyInjection.Services;
+using dependencyInjection.Chat;
+using dependencyInjection.Logging;
+using dependencyInjection.Model;
 
-namespace dependencyInjection
+namespace dependencyInjection.Hosting
 {
 	public static class AutofacSetup
 	{

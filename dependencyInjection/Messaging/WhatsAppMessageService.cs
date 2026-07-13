@@ -1,4 +1,7 @@
-namespace dependencyInjection.Services
+using dependencyInjection.Chat;
+using dependencyInjection.Model;
+
+namespace dependencyInjection.Messaging
 {
 	[Messenger("WhatsApp", "lange Texte ok")]
 	internal class WhatsAppMessageService : IMessageService

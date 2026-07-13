@@ -1,28 +1,32 @@
-using Autofac.Features.Metadata;
+using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
+using dependencyInjection.Messaging;
+using dependencyInjection.Model;
 
-namespace dependencyInjection.Services
+namespace dependencyInjection.Chat
 {
-	internal class ChatAppAutofac
+	internal class ChatAppMicrosoft
 	{
 		private const string Quit = "Beenden";
 		private const string BroadcastChoice = "alle (Broadcast)";
 
 		private readonly UserRepository users;
 		private readonly IChatScreen screen;
-		// Feature: Meta<Lazy<T>> - kombinierte Relationship-Types: Metadata + verzoegerte Erzeugung + Menge.
-		// Der Messenger wird erst gebaut, wenn man ihn wirklich auswaehlt. MS DI kann das nicht automatisch.
-		private readonly IReadOnlyList<Meta<Lazy<IMessageService>>> messengers;
+		private readonly IMessageService sms;
+		private readonly IMessageService whatsapp;
 
-		public ChatAppAutofac(UserRepository users, IChatScreen screen, IEnumerable<Meta<Lazy<IMessageService>>> messengers)
+		public ChatAppMicrosoft(UserRepository users, IChatScreen screen, [FromKeyedServices("sms")] IMessageService sms, [FromKeyedServices("whatsapp")] IMessageService whatsapp)
 		{
 			this.users = users;
 			this.screen = screen;
-			this.messengers = messengers.ToList();
+			this.sms = sms;
+			this.whatsapp = whatsapp;
 		}
 
 		public void Run()
 		{
+			SeedUsers();
+
 			while (true)
 			{
 				screen.Render();
@@ -34,7 +38,8 @@ namespace dependencyInjection.Services
 				}
 
 				var recipient = AskRecipient(from);
-				var messenger = AskMessenger();
+				var channel = AskChannel();
+				var messenger = channel == "WhatsApp" ? whatsapp : sms;
 				var text = AskText(from);
 
 				if (string.IsNullOrWhiteSpace(text))
@@ -44,21 +49,6 @@ namespace dependencyInjection.Services
 
 				Deliver(from, recipient, messenger, text);
 			}
-		}
-
-		private IMessageService AskMessenger()
-		{
-			var byLabel = messengers.ToDictionary(
-				m => $"{m.Metadata["Name"]} ({m.Metadata["Note"]})",
-				m => m.Value);
-
-			var choice = AnsiConsole.Prompt(
-				new SelectionPrompt<string>()
-					.Title("Welcher [bold]Messenger[/]?")
-					.AddChoices(byLabel.Keys));
-
-			// Feature: Lazy.Value erzeugt die Instanz genau jetzt (on-demand, nur der gewaehlte Messenger).
-			return byLabel[choice].Value;
 		}
 
 		private void Deliver(User from, string recipient, IMessageService messenger, string text)
@@ -74,6 +64,19 @@ namespace dependencyInjection.Services
 			{
 				messenger.Send(from, to, text);
 			}
+		}
+
+		private void SeedUsers()
+		{
+			if (users.Users.Count > 0)
+			{
+				return;
+			}
+
+			users.Add(new User { Id = 1, Name = "John" });
+			users.Add(new User { Id = 2, Name = "Jane" });
+			users.Add(new User { Id = 3, Name = "Bob" });
+			users.Add(new User { Id = 4, Name = "Alice" });
 		}
 
 		private User? AskSender()
@@ -92,6 +95,14 @@ namespace dependencyInjection.Services
 				new SelectionPrompt<string>()
 					.Title($"[green]{from.Name}[/] schreibt an wen?")
 					.AddChoices(users.Users.Where(u => u.Id != from.Id).Select(u => u.Name).Prepend(BroadcastChoice)));
+		}
+
+		private static string AskChannel()
+		{
+			return AnsiConsole.Prompt(
+				new SelectionPrompt<string>()
+					.Title("Welcher [bold]Messenger[/]?")
+					.AddChoices("SMS", "WhatsApp"));
 		}
 
 		private static string AskText(User from)

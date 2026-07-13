@@ -1,7 +1,9 @@
 using Spectre.Console;
 using Spectre.Console.Rendering;
+using dependencyInjection.Logging;
+using dependencyInjection.Model;
 
-namespace dependencyInjection.Services
+namespace dependencyInjection.Chat
 {
 	internal record ChatMessage(string Counterpart, string Channel, string Text, DateTime Time, bool Outgoing);
 

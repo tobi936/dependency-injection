@@ -1,4 +1,4 @@
-namespace dependencyInjection.Services
+namespace dependencyInjection.Messaging
 {
 	[AttributeUsage(AttributeTargets.Class)]
 	internal sealed class MessengerAttribute : Attribute
