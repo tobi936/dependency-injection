@@ -25,7 +25,7 @@ namespace dependencyInjection.Chat
 
 		public void Run()
 		{
-			SeedUsers();
+			UserSeeder.Seed(users);
 
 			while (true)
 			{
@@ -64,19 +64,6 @@ namespace dependencyInjection.Chat
 			{
 				messenger.Send(from, to, text);
 			}
-		}
-
-		private void SeedUsers()
-		{
-			if (users.Users.Count > 0)
-			{
-				return;
-			}
-
-			users.Add(new User { Id = 1, Name = "John" });
-			users.Add(new User { Id = 2, Name = "Jane" });
-			users.Add(new User { Id = 3, Name = "Bob" });
-			users.Add(new User { Id = 4, Name = "Alice" });
 		}
 
 		private User? AskSender()

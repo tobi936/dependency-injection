@@ -9,11 +9,23 @@ var container = AnsiConsole.Prompt(
 		.Title("Welcher [bold]DI-Container[/]?")
 		.AddChoices("Autofac", "Microsoft DI"));
 
+var demo = AnsiConsole.Prompt(
+	new SelectionPrompt<string>()
+		.Title("Was zeigen?")
+		.AddChoices("Basis-Chat", "Feature-Showcase", "Beides"));
+
+var mode = demo switch
+{
+	"Basis-Chat" => DemoMode.BasisChat,
+	"Feature-Showcase" => DemoMode.Showcase,
+	_ => DemoMode.Beides
+};
+
 if (container == "Autofac")
 {
-	AutofacSetup.Run();
+	AutofacSetup.Run(mode);
 }
 else
 {
-	MicrosoftSetup.Run();
+	MicrosoftSetup.Run(mode);
 }

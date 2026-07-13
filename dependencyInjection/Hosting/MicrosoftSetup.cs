@@ -12,7 +12,7 @@ namespace dependencyInjection.Hosting
 {
 	public static class MicrosoftSetup
 	{
-		public static void Run()
+		public static void Run(DemoMode mode)
 		{
 			var services = new ServiceCollection();
 
@@ -32,7 +32,7 @@ namespace dependencyInjection.Hosting
 			services.AddSingleton<UserRepository>(sp =>
 			{
 				var repo = new UserRepository();
-				Seed(repo);
+				UserSeeder.Seed(repo);
 				return repo;
 			});
 			services.AddTransient<ChatAppMicrosoft>();
@@ -76,21 +76,16 @@ namespace dependencyInjection.Hosting
 			});
 
 			using var provider = services.BuildServiceProvider();
-			MicrosoftShowcase.Run(provider);
-			provider.GetRequiredService<ChatAppMicrosoft>().Run();
-		}
 
-		private static void Seed(UserRepository users)
-		{
-			if (users.Users.Count > 0)
+			if (mode is DemoMode.Showcase or DemoMode.Beides)
 			{
-				return;
+				MicrosoftShowcase.Run(provider);
 			}
 
-			users.Add(new User { Id = 1, Name = "John" });
-			users.Add(new User { Id = 2, Name = "Jane" });
-			users.Add(new User { Id = 3, Name = "Bob" });
-			users.Add(new User { Id = 4, Name = "Alice" });
+			if (mode is DemoMode.BasisChat or DemoMode.Beides)
+			{
+				provider.GetRequiredService<ChatAppMicrosoft>().Run();
+			}
 		}
 	}
 }

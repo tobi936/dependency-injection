@@ -11,7 +11,7 @@ namespace dependencyInjection.Hosting
 {
 	public static class AutofacSetup
 	{
-		public static void Run()
+		public static void Run(DemoMode mode)
 		{
 			var builder = new ContainerBuilder();
 
@@ -31,7 +31,7 @@ namespace dependencyInjection.Hosting
 			builder.RegisterDecorator<LoggingChatScreenDecorator, IChatScreen>();
 
 			builder.RegisterType<UserRepository>()
-				.OnActivated(e => Seed(e.Instance))
+				.OnActivated(e => UserSeeder.Seed(e.Instance))
 				.SingleInstance();
 
 			builder.RegisterType<ChatAppAutofac>().InstancePerLifetimeScope();
@@ -76,21 +76,16 @@ namespace dependencyInjection.Hosting
 			using var container = builder.Build();
 
 			using var scope = container.BeginLifetimeScope();
-			AutofacShowcase.Run(scope);
-			scope.Resolve<ChatAppAutofac>().Run();
-		}
 
-		private static void Seed(UserRepository users)
-		{
-			if (users.Users.Count > 0)
+			if (mode is DemoMode.Showcase or DemoMode.Beides)
 			{
-				return;
+				AutofacShowcase.Run(scope);
 			}
 
-			users.Add(new User { Id = 1, Name = "John" });
-			users.Add(new User { Id = 2, Name = "Jane" });
-			users.Add(new User { Id = 3, Name = "Bob" });
-			users.Add(new User { Id = 4, Name = "Alice" });
+			if (mode is DemoMode.BasisChat or DemoMode.Beides)
+			{
+				scope.Resolve<ChatAppAutofac>().Run();
+			}
 		}
 	}
 }

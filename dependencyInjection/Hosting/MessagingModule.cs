@@ -1,7 +1,5 @@
 using System.Reflection;
 using Autofac;
-using Autofac.Extras.DynamicProxy;
-using dependencyInjection.Logging;
 using dependencyInjection.Messaging;
 
 namespace dependencyInjection.Hosting
@@ -19,10 +17,7 @@ namespace dependencyInjection.Hosting
 				.As<IMessageService>()
 				// Feature: Metadata - freie Zusatzinfos pro Registrierung, reicher als MS Keyed Services.
 				.WithMetadata("Name", t => t.GetCustomAttribute<MessengerAttribute>()!.DisplayName)
-				.WithMetadata("Note", t => t.GetCustomAttribute<MessengerAttribute>()!.Note)
-				// Feature: Interception (AOP) - jeder Aufruf laeuft durch den Interceptor, ohne Boilerplate.
-				.EnableInterfaceInterceptors()
-				.InterceptedBy(typeof(CallLogInterceptor));
+				.WithMetadata("Note", t => t.GetCustomAttribute<MessengerAttribute>()!.Note);
 
 			// Feature: Konkrete Typen zusaetzlich registrieren, damit die Delegate-Factory
 			// (Func<string, IMessageService> in AutofacSetup) per Resolve(konkreterTyp) arbeiten kann.
@@ -32,8 +27,6 @@ namespace dependencyInjection.Hosting
 			builder.RegisterAssemblyTypes(typeof(IMessageService).Assembly)
 				.Where(t => t.GetCustomAttribute<MessengerAttribute>() != null)
 				.InstancePerLifetimeScope();
-
-			builder.RegisterType<CallLogInterceptor>();
 		}
 	}
 }
