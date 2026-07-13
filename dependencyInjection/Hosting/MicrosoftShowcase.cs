@@ -1,6 +1,5 @@
 using dependencyInjection.Advanced;
 using dependencyInjection.Diagnostics;
-using dependencyInjection.Model;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 
@@ -12,9 +11,6 @@ namespace dependencyInjection.Hosting
 		{
 			const string container = "Microsoft DI";
 			ContainerMetrics.Header(container, "Standard Features & Einschränkungen");
-
-			FuncFactoryDemo(container, provider);
-			WaitForUser();
 
 			DisposalDemo(container, provider);
 			WaitForUser();
@@ -32,19 +28,6 @@ namespace dependencyInjection.Hosting
 			Console.WriteLine("Drücke eine beliebige Taste, um fortzufahren...");
 			Console.ReadKey(true);
 			Console.Clear();
-		}
-
-		private static void FuncFactoryDemo(string container, IServiceProvider provider)
-		{
-			ContainerMetrics.Header(container, "Delegate Factory: Func<string, IMessageService>");
-
-			var router = provider.GetRequiredService<MessageRouter>();
-			var users = provider.GetRequiredService<UserRepository>();
-			var from = users.Users.First();
-			var to = users.Users.Skip(1).First();
-
-			router.Dispatch("SMS", from, to.Name, "Hi via Func", users);
-			router.Dispatch("WhatsApp", from, "alle (Broadcast)", "Hallo alle", users);
 		}
 
 		private static void DisposalDemo(string container, IServiceProvider provider)

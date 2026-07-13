@@ -3,9 +3,7 @@ using Autofac.Extras.DynamicProxy;
 using dependencyInjection.Advanced;
 using dependencyInjection.Chat;
 using dependencyInjection.Logging;
-using dependencyInjection.Messaging;
 using dependencyInjection.Model;
-using System.Reflection;
 
 namespace dependencyInjection.Hosting
 {
@@ -55,23 +53,6 @@ namespace dependencyInjection.Hosting
 			builder.RegisterType<CyclicB>().As<CyclicB>()
 				.WithParameter("container", "Autofac")
 				.SingleInstance();
-
-			builder.Register<MessageRouter>(ctx =>
-			{
-				var local = ctx.Resolve<ILifetimeScope>();
-				Func<string, IMessageService> factory = channel =>
-				{
-					var t = typeof(IMessageService).Assembly.GetTypes()
-						.FirstOrDefault(x => typeof(IMessageService).IsAssignableFrom(x)
-							&& !x.IsInterface
-							&& x.GetCustomAttribute<MessengerAttribute>() is { } attr
-							&& attr.DisplayName == channel)
-						?? throw new InvalidOperationException($"Kein Messenger für '{channel}'");
-					return (IMessageService)local.Resolve(t);
-				};
-				return new MessageRouter("Autofac", factory);
-			})
-			.SingleInstance();
 
 			using var container = builder.Build();
 

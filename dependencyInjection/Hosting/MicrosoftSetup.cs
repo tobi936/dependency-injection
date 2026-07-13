@@ -6,7 +6,6 @@ using dependencyInjection.Messaging;
 using dependencyInjection.Model;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Reflection;
 
 namespace dependencyInjection.Hosting
 {
@@ -51,29 +50,6 @@ namespace dependencyInjection.Hosting
 
 			services.AddSingleton<CyclicB>();
 			services.AddSingleton<CyclicA>();
-
-			services.AddSingleton<MessageRouter>(sp =>
-			{
-				var messengerMapping = typeof(IMessageService).Assembly.GetTypes()
-					.Where(x => typeof(IMessageService).IsAssignableFrom(x)
-						&& !x.IsInterface
-						&& x.GetCustomAttribute<MessengerAttribute>() != null)
-					.ToDictionary(
-						x => x.GetCustomAttribute<MessengerAttribute>()!.DisplayName,
-						x => x
-					);
-
-				Func<string, IMessageService> factory = channel =>
-				{
-					if (!messengerMapping.TryGetValue(channel, out var type))
-					{
-						throw new InvalidOperationException($"Kein Messenger für '{channel}'");
-					}
-					return (IMessageService)sp.GetRequiredService(type);
-				};
-
-				return new MessageRouter("Microsoft DI", factory);
-			});
 
 			using var provider = services.BuildServiceProvider();
 

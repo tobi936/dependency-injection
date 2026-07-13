@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using Autofac;
 using dependencyInjection.Advanced;
 using dependencyInjection.Diagnostics;
-using dependencyInjection.Messaging;
-using dependencyInjection.Model;
 
 namespace dependencyInjection.Hosting
 {
@@ -14,9 +11,6 @@ namespace dependencyInjection.Hosting
 		{
 			const string container = "Autofac";
 			ContainerMetrics.Header(container, "Erweiterte Features");
-
-			FuncFactoryDemo(container, scope);
-			WaitForUser();
 
 			DisposalDemo(container, scope);
 			WaitForUser();
@@ -34,19 +28,6 @@ namespace dependencyInjection.Hosting
 			Console.WriteLine("Drücke eine beliebige Taste, um die nächste Demo anzuzeigen...");
 			Console.ReadKey(true);
 			Console.Clear();
-		}
-
-		private static void FuncFactoryDemo(string container, ILifetimeScope scope)
-		{
-			ContainerMetrics.Header(container, "Delegate Factory: Func<string, IMessageService>");
-
-			var router = scope.Resolve<MessageRouter>();
-			var users = scope.Resolve<UserRepository>();
-			var from = users.Users.First();
-			var to = users.Users.Skip(1).First();
-
-			router.Dispatch("SMS", from, to.Name, "Hi via Func", users);
-			router.Dispatch("WhatsApp", from, "alle (Broadcast)", "Hallo alle", users);
 		}
 
 		private static void DisposalDemo(string container, ILifetimeScope scope)
