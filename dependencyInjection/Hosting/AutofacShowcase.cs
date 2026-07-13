@@ -1,0 +1,134 @@
+using Autofac;
+using dependencyInjection.Advanced;
+using dependencyInjection.Diagnostics;
+using dependencyInjection.Messaging;
+using dependencyInjection.Model;
+
+namespace dependencyInjection.Hosting
+{
+	// Feature: Der "Architekten-Showcase" fuer den Autofac-Zweig.
+	// Vier kompakte Demos, die jeweils ein Autofac-Feature gegenueber MS DI herausstellen:
+	//   1. FuncFactoryDemo    -> Delegate Factory (Func<T>)
+	//   2. DisposalDemo       -> .ExternallyOwned() (feingranulares Disposal)
+	//   3. OnActivatedDemo    -> .OnActivated(...) Lifecycle-Hook
+	//   4. CircularDemo       -> PropertiesAutowired() loest zirkulaere Abhaengigkeiten
+	internal static class AutofacShowcase
+	{
+		public static void Run(ILifetimeScope scope)
+		{
+			const string container = "Autofac";
+			ContainerMetrics.Header(container, "Erweiterte Features");
+
+			FuncFactoryDemo(container, scope);
+			DisposalDemo(container, scope);
+			OnActivatedDemo(container, scope);
+			CircularDemo(container, scope);
+		}
+
+		// Demo 1: Delegate Factory.
+		// Der MessageRouter bekommt Func<string, IMessageService> per Konstruktor injiziert.
+		// Autofac erzeugt diesen Func automatisch im Setup (siehe AutofacSetup.cs, Register<MessageRouter>(ctx => ...)).
+		// Hier sieht man: pro Channel-Aufruf wird der passende Messenger ON DEMAND erzeugt.
+		private static void FuncFactoryDemo(string container, ILifetimeScope scope)
+		{
+			ContainerMetrics.Header(container, "Delegate Factory: Func<string, IMessageService>");
+
+			var router = scope.Resolve<MessageRouter>();
+			var users = scope.Resolve<UserRepository>();
+			var from = users.Users.First();
+			var to = users.Users.Skip(1).First();
+
+			router.Dispatch("SMS", from, to.Name, "Hi via Func", users);
+			router.Dispatch("WhatsApp", from, "alle (Broadcast)", "Hallo alle", users);
+		}
+
+		// Demo 2: .ExternallyOwned() vs. normales Disposal.
+		// Beide Wrapper bauen intern eine TrackedResource. Nur die "External"-Variante ist .ExternallyOwned().
+		// Beim Dispose des Scopes (am Ende dieser Methode) wird nur die "Normal"-Variante disposed.
+		// Beweisstueck: Konsolen-Output - der Architekt sieht genau eine DISPOSED-Zeile.
+		private static void DisposalDemo(string container, ILifetimeScope scope)
+		{
+			ContainerMetrics.Header(container, "Feingranulares Disposal: .ExternallyOwned()");
+
+			scope.Resolve<TrackedResourceNormal>();
+			scope.Resolve<TrackedResourceExternal>();
+		}
+
+		// Demo 3: .OnActivated(...) Lifecycle-Hook.
+		// GreetedService wird im Setup mit .OnActivated(e => e.Instance.Init("...")) registriert.
+		// Wenn wir hier Resolve<>() aufrufen, feuert der Hook automatisch - ohne dass der Service-Code etwas davon weiss.
+		private static void OnActivatedDemo(string container, ILifetimeScope scope)
+		{
+			ContainerMetrics.Header(container, "Lifecycle-Hook: .OnActivated(...)");
+
+			scope.Resolve<GreetedService>().SayHello();
+		}
+
+		// Demo 4: PropertiesAutowired() loest eine zirkulaere Abhaengigkeit.
+		// CyclicA und CyclicB halten sich gegenseitig per Property - Autofac setzt diese nach der Konstruktion.
+		// In MS DI wuerde der gleiche Aufbau crashen (siehe MicrosoftShowcase.CircularDemo).
+		private static void CircularDemo(string container, ILifetimeScope scope)
+		{
+			ContainerMetrics.Header(container, "Zirkulare Abhängigkeit: PropertiesAutowired()");
+
+			var a = scope.Resolve<CyclicA>();
+			a.Touch();
+			a.B?.Touch();
+		}
+	}
+
+	// Wrapper-Klassen, damit die Registrierung pro Container individuell erfolgen kann
+	// (z. B. .ExternallyOwned() nur hier im Autofac-Showcase).
+	internal sealed class TrackedResourceNormal : IDisposable
+	{
+		private readonly TrackedResource inner;
+
+		public TrackedResourceNormal()
+		{
+			inner = new TrackedResource("Autofac", "NormalOwnedResource", externallyOwned: false);
+		}
+
+		public void Dispose()
+		{
+			inner.Dispose();
+		}
+	}
+
+	internal sealed class TrackedResourceExternal : IDisposable
+	{
+		private readonly TrackedResource inner;
+
+		public TrackedResourceExternal()
+		{
+			inner = new TrackedResource("Autofac", "ExternallyOwnedResource", externallyOwned: true);
+		}
+
+		public void Dispose()
+		{
+			inner.Dispose();
+		}
+	}
+
+	// Service mit interner Init-Methode - die .OnActivated-Hook ruft sie NACH dem Konstruktor auf.
+	internal sealed class GreetedService
+	{
+		public string Greeting { get; private set; } = string.Empty;
+		public DateTime CreatedAt { get; private set; }
+
+		public GreetedService()
+		{
+			CreatedAt = DateTime.Now;
+		}
+
+		internal void Init(string greeting)
+		{
+			Greeting = greeting;
+			ContainerMetrics.Event("Autofac", "ON-ACTIVATED", $"GreetedService initialisiert mit '{greeting}' um {CreatedAt:HH:mm:ss.fff}", "magenta");
+		}
+
+		public void SayHello()
+		{
+			ContainerMetrics.Line("Autofac", $"GreetedService meldet: {Greeting}", "white");
+		}
+	}
+}
