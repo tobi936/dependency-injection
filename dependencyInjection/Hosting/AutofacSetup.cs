@@ -27,15 +27,38 @@ namespace dependencyInjection.Hosting
 
 			// Feature: SingleInstance = Singleton. (Autofac-Default ist InstancePerDependency = Transient.)
 			// Feature: PropertiesAutowired - fuellt die Audit-Property automatisch. MS DI kann das nicht.
-			// Feature: AOP-Performance-Tracking - .EnableInterfaceInterceptors() baut einen Castle-Proxy
-			// um ChatScreen, .InterceptedBy() verkettet den Interceptor davor. Jeder Aufruf auf IChatScreen
-			// laeuft durch PerformanceTrackingInterceptor, OHNE dass ChatScreen etwas davon weiss.
-			// MS DI hat keinen eingebauten Interceptor-Mechanismus - dort braucht man Middleware/Filter-Pipeline.
+			// -----------------------------------------------------------------------------------
+			// Feature: AOP-Performance-Tracking am Beispiel ChatScreen.
+			//
+			// 1) builder.RegisterType<PerformanceTrackingInterceptor>();
+			//    -> der Interceptor selbst ist ein normaler Dienst. Er muss im Container
+			//       registriert sein, damit .InterceptedBy(...) ihn ueber seinen Typ finden kann.
+			//
+			// 2) .EnableInterfaceInterceptors()
+			//    -> AUTOFAC-FEATURE: schaltet den "Interface-Interception"-Modus ein.
+			//       Konkret heisst das: Autofac baut fuer IChatScreen zur Laufzeit einen
+			//       dynamischen Proxy (mit Castle.DynamicProxy) und gibt NUR diesen Proxy
+			//       an den Aufrufer zurueck. Der echte ChatScreen lebt weiter im Container,
+			//       der Aufrufer sieht ihn nie direkt. Dadurch kann der Interceptor
+			//       VOR jedem Methodenaufruf einspringen.
+			//       Wichtig: das funktioniert nur, weil IChatScreen ein Interface ist -
+			//       Klassen ohne sichtbares Interface koennte Castle nicht "intercepten".
+			//
+			// 3) .InterceptedBy(typeof(PerformanceTrackingInterceptor))
+			//    -> AUTOFAC-FEATURE: verkettet den genannten Interceptor in die Aufruf-
+			//       Pipeline. Mehrere Interceptors sind moeglich - die Reihenfolge folgt
+			//       der Registrierung. Jeder Aufruf auf IChatScreen landet ZUERST hier,
+			//       dann (nach invocation.Proceed()) erst im echten ChatScreen.
+			//
+			// 4) .SingleInstance()
+			//    -> optional, aber typisch: ein einziger ChatScreen-Proxy fuer den
+			//       gesamten Container-Lebenszyklus. Spart Proxy-Allokationen.
+			// -----------------------------------------------------------------------------------
 			builder.RegisterType<PerformanceTrackingInterceptor>();
 			builder.RegisterType<ChatScreen>().As<IChatScreen>()
 				.PropertiesAutowired()
-				.EnableInterfaceInterceptors()
-				.InterceptedBy(typeof(PerformanceTrackingInterceptor))
+				.EnableInterfaceInterceptors()                       // baut den Castle-Proxy um IChatScreen
+				.InterceptedBy(typeof(PerformanceTrackingInterceptor)) // verknuepft den Interceptor in die Aufrufkette
 				.SingleInstance();
 
 			// Feature: Decorator eingebaut - umhuellt IChatScreen mit Logging. MS DI braucht dafuer Scrutor.
@@ -68,20 +91,40 @@ namespace dependencyInjection.Hosting
 				.OnActivated(e => e.Instance.Init("Hallo vom Autofac OnActivated-Hook"))
 				.SingleInstance();
 
-			// Feature: PropertiesAutowired() loest zirkulaere Abhaengigkeiten auf.
-			// CyclicA haelt CyclicB per Property (NICHT Konstruktor), Autofac setzt sie nach der Konstruktion.
-			// MS DI wuerde hier mit einer zirkulaeren Konstruktor-Injection crashen.
-			// WithParameter("container", ...) liefert den festen String fuer den Konstruktor -
-			// Autofac hat keine "Magic" dafuer, das muss man explizit angeben (genau wie bei MessageRouter).
-			builder.RegisterType<CyclicA>().As<CyclicA>()
-				.WithParameter("container", "Autofac")
-				.PropertiesAutowired()
-				.SingleInstance();
+			// -----------------------------------------------------------------------------------
+			// Feature: Asymmetrische Konstruktor/Property-Injection loest zirkulaere Abhaengigkeit.
+			//
+			//   CyclicA(string, CyclicB)         -> A holt sich B HART im Konstruktor.
+			//   CyclicB(string) + B.A Property    -> B haelt A nur als optionale Property.
+			//
+			//   Wie loest das den Kreis?
+			//     1. Resolve<CyclicA>() -> Container sieht A(string, B).
+			//     2. Container resolvet B ZUERST: B(string) verlangt kein A, baut sauber durch.
+			//     3. Container baut A mit der fertigen B-Instanz. A.B ist also schon gesetzt.
+			//     4. OnActivated-Hook auf A laeuft NACH dem Konstruktor: setzt B.A = aInstanz
+			//        (ohne neuen Resolve-Aufruf - der Hook bekommt die fertige Instanz).
+			//     Genau EINE Seite des Kreises (B -> A) wird also erst NACH der Konstruktion
+			//     verbunden -> der Container muss nie beide gleichzeitig kennen.
+			//
+			//   Warum KEIN PropertiesAutowired()?
+			//     PropertiesAutowired wuerde beim Bau von B versuchen, B.A via Resolve<CyclicA>()
+			//     zu befuellen. A's Lambda wuerde dann wieder Resolve<CyclicB>() rufen -> Kreis.
+			//     OnActivated hingegen erhaelt die Instanz DIREKT, ohne nochmal zu resolven.
+			//
+			//   Warum Factory-Lambda statt WithParameter?
+			//     A's Konstruktor verlangt (string, CyclicB). Die Lambda-Loesung delegiert an
+			//     Autofacs normalen Resolve<CyclicB>()-Pfad - so bekommt A den voll integrierten B.
+			//
+			//   .SingleInstance() ist hier wichtig: ohne Singleton gaebe es pro Resolve neue
+			//   A/B-Instanzen, und die Property-Verknuepfung waere jeweils nur einseitig.
+			// -----------------------------------------------------------------------------------
+			builder.Register<CyclicA>(ctx => new CyclicA("Autofac", ctx.Resolve<CyclicB>()))
+				.OnActivated(e => e.Instance.B.A = e.Instance)            // setzt B.A = a NACHDEM beide Konstruktoren durch sind
+				.SingleInstance();                                          // A und B leben als ein einziges Paar
 
 			builder.RegisterType<CyclicB>().As<CyclicB>()
-				.WithParameter("container", "Autofac")
-				.PropertiesAutowired()
-				.SingleInstance();
+				.WithParameter("container", "Autofac")                     // fix: Konstruktor-Argument "container"
+				.SingleInstance();                                          // ohne SingleInstance waere A/B nicht dasselbe Paar
 
 			// Feature: Delegate Factory - Autofac erzeugt den Func automatisch.
 			// MessageRouter bekommt Func<string, IMessageService> und kann zur Laufzeit pro Channel
