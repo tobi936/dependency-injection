@@ -1,7 +1,8 @@
-using System;
-using Microsoft.Extensions.DependencyInjection;
 using dependencyInjection.Advanced;
 using dependencyInjection.Diagnostics;
+using dependencyInjection.Model;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace dependencyInjection.Hosting
 {
@@ -35,8 +36,15 @@ namespace dependencyInjection.Hosting
 
 		private static void FuncFactoryDemo(string container, IServiceProvider provider)
 		{
-			ContainerMetrics.Header(container, "Delegate Factory Test");
-			ContainerMetrics.Line(container, "Microsoft DI unterstützt keine impliziten Func-Fabriken.", "red");
+			ContainerMetrics.Header(container, "Delegate Factory: Func<string, IMessageService>");
+
+			var router = provider.GetRequiredService<MessageRouter>();
+			var users = provider.GetRequiredService<UserRepository>();
+			var from = users.Users.First();
+			var to = users.Users.Skip(1).First();
+
+			router.Dispatch("SMS", from, to.Name, "Hi via Func", users);
+			router.Dispatch("WhatsApp", from, "alle (Broadcast)", "Hallo alle", users);
 		}
 
 		private static void DisposalDemo(string container, IServiceProvider provider)
@@ -105,7 +113,7 @@ namespace dependencyInjection.Hosting
 
 		public TrackedResourceExternalMs()
 		{
-			inner = new TrackedResource("Microsoft DI", "ExternallyOwnedResource", true);
+			inner = new TrackedResource("Microsoft DI", "ExternallyOwnedResource", false);
 		}
 
 		public void Dispose()

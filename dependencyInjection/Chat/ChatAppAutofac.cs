@@ -12,8 +12,6 @@ namespace dependencyInjection.Chat
 
 		private readonly UserRepository users;
 		private readonly IChatScreen screen;
-		// Feature: Meta<Lazy<T>> - kombinierte Relationship-Types: Metadata + verzoegerte Erzeugung + Menge.
-		// Der Messenger wird erst gebaut, wenn man ihn wirklich auswaehlt. MS DI kann das nicht automatisch.
 		private readonly IReadOnlyList<Meta<Lazy<IMessageService>>> messengers;
 
 		public ChatAppAutofac(UserRepository users, IChatScreen screen, IEnumerable<Meta<Lazy<IMessageService>>> messengers)
@@ -59,7 +57,6 @@ namespace dependencyInjection.Chat
 					.Title("Welcher [bold]Messenger[/]?")
 					.AddChoices(byLabel.Keys));
 
-			// Feature: Lazy.Value erzeugt die Instanz genau jetzt (on-demand, nur der gewaehlte Messenger).
 			return byLabel[choice].Value;
 		}
 
