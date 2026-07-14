@@ -53,7 +53,7 @@ namespace dependencyInjection.Chat
 
 		public void Render()
 		{
-			Logger?.Log("[audit] render");
+			Logger?.Log("render");
 			Console.Clear();
 
 			var users = userRepository.Users.Take(4).ToList();

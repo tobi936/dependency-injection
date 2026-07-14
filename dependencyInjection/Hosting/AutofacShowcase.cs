@@ -50,7 +50,7 @@ namespace dependencyInjection.Hosting
 
 		private static void CircularDemo(string container, ILifetimeScope scope)
 		{
-			ContainerMetrics.Header(container, "Zirkulare Abhängigkeit: PropertiesAutowired()");
+			ContainerMetrics.Header(container, "Zirkulare Abhängigkeit:");
 
 			var a = scope.Resolve<CyclicA>();
 			a.Touch();
