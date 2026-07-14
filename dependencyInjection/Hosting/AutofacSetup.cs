@@ -14,7 +14,6 @@ namespace dependencyInjection.Hosting
 			var builder = new ContainerBuilder();
 
 			builder.RegisterModule<MessagingModule>();
-
 			builder.RegisterType<FileChatLogger>().As<IChatLogger>()
 				.WithParameter("path", "chat.log")
 				.SingleInstance();
@@ -32,7 +31,7 @@ namespace dependencyInjection.Hosting
 				.OnActivated(e => UserSeeder.Seed(e.Instance))
 				.SingleInstance();
 
-			builder.RegisterType<ChatAppAutofac>().InstancePerLifetimeScope();
+			builder.RegisterType<ChatAppAutofac>().InstancePerLifetimeScope(); //ChatApp
 
 			builder.RegisterType<TrackedResourceExternal>().As<TrackedResourceExternal>()
 				.ExternallyOwned()
@@ -53,6 +52,9 @@ namespace dependencyInjection.Hosting
 			builder.RegisterType<CyclicB>().As<CyclicB>()
 				.WithParameter("container", "Autofac")
 				.SingleInstance();
+
+			builder.RegisterType<Greeting>();
+			builder.RegisterType<GreetingConsumer>();
 
 			using var container = builder.Build();
 

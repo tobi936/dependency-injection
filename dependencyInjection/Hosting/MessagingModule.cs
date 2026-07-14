@@ -4,8 +4,6 @@ using dependencyInjection.Messaging;
 
 namespace dependencyInjection.Hosting
 {
-	// Feature: Module - buendelt zusammengehoerige Registrierungen (wie ein Plugin-Paket).
-	// MS DI kennt nur Extension-Methoden (services.AddMessaging()), aber kein echtes Modul-Konzept.
 	internal class MessagingModule : Autofac.Module
 	{
 		protected override void Load(ContainerBuilder builder)

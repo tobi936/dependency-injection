@@ -9,21 +9,21 @@ namespace dependencyInjection.Messaging
 	{
 		private const int MaxSmsLength = 50;
 
-		private readonly Lazy<IChatScreen> chatScreen;
+		private readonly IChatScreen chatScreen;
 
-		public SMSMessageService(Lazy<IChatScreen> chatScreen)
+		public SMSMessageService(IChatScreen chatScreen)
 		{
 			this.chatScreen = chatScreen;
 		}
 
 		public void Send(User from, User to, string message)
 		{
-			chatScreen.Value.Send(from, to, "SMS", Shorten(message));
+			chatScreen.Send(from, to, "SMS", Shorten(message));
 		}
 
 		public void Broadcast(User from, string message)
 		{
-			chatScreen.Value.Broadcast(from, "SMS", Shorten(message));
+			chatScreen.Broadcast(from, "SMS", Shorten(message));
 		}
 
 		private static string Shorten(string message)

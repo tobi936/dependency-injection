@@ -5,7 +5,6 @@ using dependencyInjection.Logging;
 using dependencyInjection.Messaging;
 using dependencyInjection.Model;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 
 namespace dependencyInjection.Hosting
 {
@@ -26,7 +25,6 @@ namespace dependencyInjection.Hosting
 
 			services.AddTransient<SMSMessageService>();
 			services.AddTransient<WhatsAppMessageService>();
-			services.AddTransient<TelegramMessageService>();
 
 			services.AddSingleton<UserRepository>(sp =>
 			{
@@ -35,8 +33,6 @@ namespace dependencyInjection.Hosting
 				return repo;
 			});
 			services.AddTransient<ChatAppMicrosoft>();
-
-			services.AddSingleton<Lazy<IChatScreen>>(sp => new Lazy<IChatScreen>(() => sp.GetRequiredService<IChatScreen>()));
 
 			services.AddSingleton<TrackedResourceNormalMs>();
 			services.AddSingleton<TrackedResourceExternalMs>();
@@ -48,8 +44,11 @@ namespace dependencyInjection.Hosting
 				return service;
 			});
 
-			services.AddSingleton<CyclicB>();
-			services.AddSingleton<CyclicA>();
+			services.AddSingleton<CyclicB>(_ => new CyclicB("Microsoft.Extensions.DI"));
+			services.AddSingleton<CyclicA>(sp => new CyclicA("Microsoft.Extensions.DI", sp.GetRequiredService<CyclicB>()));
+
+			services.AddTransient<Func<string, Greeting>>(_ => name => new Greeting(name));
+			services.AddTransient<GreetingConsumer>();
 
 			using var provider = services.BuildServiceProvider();
 

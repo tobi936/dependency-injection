@@ -20,6 +20,9 @@ namespace dependencyInjection.Hosting
 
 			CircularDemo(container, provider);
 			WaitForUser();
+
+			DelegateFactoryDemo(container, provider);
+			WaitForUser();
 		}
 
 		private static void WaitForUser()
@@ -67,6 +70,21 @@ namespace dependencyInjection.Hosting
 			{
 				var a = provider.GetRequiredService<CyclicA>();
 				a.Touch();
+				a.B?.Touch();
+			}
+			catch (Exception ex)
+			{
+				ContainerMetrics.Event(container, "CRASH", $"Exception abgefangen: {ex.Message}", "red");
+			}
+		}
+
+		private static void DelegateFactoryDemo(string container, IServiceProvider provider)
+		{
+			ContainerMetrics.Header(container, "Delegate-Factory: Func<string, T> nur per manueller Registrierung");
+
+			try
+			{
+				provider.GetRequiredService<GreetingConsumer>().Demo(container);
 			}
 			catch (Exception ex)
 			{

@@ -20,6 +20,9 @@ namespace dependencyInjection.Hosting
 
 			CircularDemo(container, scope);
 			WaitForUser();
+
+			DelegateFactoryDemo(container, scope);
+			WaitForUser();
 		}
 
 		private static void WaitForUser()
@@ -52,6 +55,13 @@ namespace dependencyInjection.Hosting
 			var a = scope.Resolve<CyclicA>();
 			a.Touch();
 			a.B?.Touch();
+		}
+
+		private static void DelegateFactoryDemo(string container, ILifetimeScope scope)
+		{
+			ContainerMetrics.Header(container, "Delegate-Factory: Func<string, T> ohne eigene Registrierung");
+
+			scope.Resolve<GreetingConsumer>().Demo(container);
 		}
 	}
 
