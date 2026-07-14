@@ -40,7 +40,7 @@ namespace dependencyInjection.Hosting
 
 			builder.RegisterType<TrackedResourceNormal>().As<TrackedResourceNormal>()
 				.InstancePerLifetimeScope();
-
+				
 			builder.RegisterType<GreetedService>()
 				.OnActivated(e => e.Instance.Init("Hallo vom Autofac OnActivated-Hook"))
 				.SingleInstance();

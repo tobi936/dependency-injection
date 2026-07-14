@@ -12,13 +12,13 @@ namespace dependencyInjection.Chat
 
 		private readonly UserRepository users;
 		private readonly IChatScreen screen;
-		private readonly IReadOnlyList<Meta<Lazy<IMessageService>>> messengers;
+		private readonly IEnumerable<Meta<Lazy<IMessageService>>> messengers;
 
 		public ChatAppAutofac(UserRepository users, IChatScreen screen, IEnumerable<Meta<Lazy<IMessageService>>> messengers)
 		{
 			this.users = users;
 			this.screen = screen;
-			this.messengers = messengers.ToList();
+			this.messengers = messengers;
 		}
 
 		public void Run()
